@@ -18,6 +18,7 @@ def scrape_and_filter_rss():
         
         cpf_entries = []
         finance_entries = []
+        environmental_entries = []
         
         for item in items:
             description = item.description.get_text()
@@ -39,6 +40,23 @@ def scrape_and_filter_rss():
             
             # Check for finance-related terms
             finance_terms = ["accounting", "duties", "capital"]
+            
+            # Check for environmental terms
+            environmental_terms = ["environment", "sustainability", "carbon", "emission", "green"]
+            if any(term.lower() in description.lower() for term in environmental_terms):
+                title = item.title.get_text()
+                link = item.link.get_text()
+                pub_date = item.pubDate.get_text() if item.pubDate else "No date"
+                
+                clean_description = re.sub(r'<.*?>', '', description)
+                clean_description = re.sub(r'<.*?>', '', clean_description)
+                
+                environmental_entries.append({
+                    'title': title,
+                    'link': link,
+                    'date': pub_date,
+                    'description': clean_description
+                })
             if any(term.lower() in description.lower() for term in finance_terms):
                 title = item.title.get_text()
                 link = item.link.get_text()
@@ -77,6 +95,18 @@ def scrape_and_filter_rss():
             print("Markdown file created: finance.md")
         else:
             print("No finance-related entries found")
+            
+        if environmental_entries:
+            with open('environmental.md', 'w', encoding='utf-8') as md_file:
+                md_file.write("# Environmental Related Legislation\n\n")
+                for entry in environmental_entries:
+                    md_file.write(f"## {entry['title']}\n")
+                    md_file.write(f"**Published Date:** {entry['date']}\n\n")
+                    md_file.write(f"{entry['description']}\n\n")
+                    md_file.write(f"[Read more]({entry['link']})\n\n")
+            print("Markdown file created: environmental.md")
+        else:
+            print("No environmental-related entries found")
             
     except requests.exceptions.RequestException as e:
         print(f"Error fetching RSS feed: {e}")
